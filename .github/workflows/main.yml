@@ -1,0 +1,49 @@
+on:
+  # Trigger workflow manually
+  workflow_dispatch:
+
+jobs:
+  rdp-access:
+    name: Connect to Remote Desktop with LiteManager
+    runs-on: windows-latest
+    timeout-minutes: 9999  # Increase timeout if necessary
+
+    steps:
+      - uses: actions/checkout@v3  # Fetch the repository code (if applicable)
+
+      - name: Install Prerequisites (Consider using a package manager)
+        uses: microsoft/setup-windows-action@v1.2  # Optional if prerequisites not pre-installed
+        with:
+          packages: '7Zip'  # Example dependency (adjust as needed)
+
+      - name: Download LiteManager Viewer
+        uses: actions/download-artifact@v3
+        with:
+          name: litemanager-viewer  # Artifact name (replace if different)
+          path: litemanager  # Download location
+
+      - name: Extract LiteManager Viewer (if compressed)
+        run: |
+          7z x -y litemanager/litemanager-viewer.zip  # Adjust archive type if necessary
+          # Or use built-in extraction if supported by your package manager
+
+      - name: Set Environment Variables (if necessary)
+        run: |
+          setx PATH "%PATH%;%CD%\litemanager"  # Add LiteManager directory to PATH
+
+      - name: Connect to Remote Desktop (Adjust details as needed)
+        run: |
+          litemanager.exe /SERVER:<remote_ip_address> /PORT:<remote_port> /PASSWORD:<remote_password>
+          # Replace with actual connection parameters
+
+      - name: Time Counter (Optional, adjust script as needed)
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File loop.ps1  # Use PowerShell for more flexibility
+
+          # Example loop.ps1 script (modify as needed):
+          while ($true) {
+            Start-Sleep -Seconds 60  # Adjust sleep duration
+            Write-Host "Still connected... (elapsed time: $($([DateTime]::Now) - $startTime))"
+          }
+
+          $startTime = Get-Date  # Initialize start time at first run
